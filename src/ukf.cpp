@@ -122,9 +122,9 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 
 		P_ = MatrixXd(n_x_, n_x_);
 		P_.fill(0.0);
-		Xsig_pred_ = MatrixXd(n_x_, n_sigpts_);
+		Xsig_pred_ = MatrixXd(n_x_, n_augsigpts_);
 		Xsig_pred_.fill(0.0);
-		weights_ = VectorXd(n_sigpts_);
+		weights_ = VectorXd(n_augsigpts_);
 		weights_.fill(0.0);
 
 		is_initialized_ = true;
@@ -175,13 +175,13 @@ void UKF::Prediction(double delta_t) {
   */
     // Lesson 7.14: Generating Sigma Points
     cout << "7.14\n";
-	Xsig_pred_.col(0) = x_;
+	/*Xsig_pred_.col(0) = x_;
 	//create square root matrix
 	MatrixXd A = P_.llt().matrixL();
 	for (int i = 1; i <= n_x_; i++) {
 		Xsig_pred_.col(i) = x_ + sqrt(lambda_ + n_x_) * A.col(i - 1);
 		Xsig_pred_.col(i + n_x_) = x_ - sqrt(lambda_ + n_x_) * A.col(i - 1);
-	}
+	}*/
 
 	// Lesson 7.17: Augmentation
 	cout << "7.17\n";
