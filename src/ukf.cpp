@@ -186,25 +186,32 @@ void UKF::Prediction(double delta_t) {
 	// Lesson 7.17: Augmentation
 	cout << "7.17\n";
 	VectorXd x_aug = VectorXd(n_aug_);
+	cout << "x_aug created successfully\n";
 	//create augmented mean state
 	x_aug.fill(0.0);
 	x_aug.head(n_x_) = x_;
+	cout << "x_aug init successfully\n";
 
 
 	//create augmented covariance matrix
 	MatrixXd P_aug = MatrixXd(n_aug_, n_aug_);
+	cout << "P_aug created successfully\n";
 	P_aug.fill(0.0);
 	P_aug.topLeftCorner(5, 5) = P_;
+	cout << "P_aug set to P_ successfully\n";
 	P_aug(5, 5) = std_a_ * std_a_;
 	P_aug(6, 6) = std_yawdd_ * std_yawdd_;
+	cout << "P_aug init successfully\n";
 
 	//create augmented sigma points
 	MatrixXd Xsig_aug = MatrixXd(n_aug_, n_augsigpts_);
 	Xsig_aug.col(0) = x_aug;
+	cout << "Xsig_aug created successfully\n";
 	for (int i = 1; i <= n_aug_; i++) {
 		Xsig_aug.col(i) = x_aug + sqrt(lambda_ + n_aug_) * A.col(i - 1);
 		Xsig_aug.col(i + n_aug_) = x_aug - sqrt(lambda_ + n_aug_) * A.col(i - 1);
 	}
+	cout << "Xsig_aug init successfully\n";
 
 	// Lesson 7.20: Sigma Point Prediction
 	cout << "7.20\n";
