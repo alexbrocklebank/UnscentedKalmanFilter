@@ -228,13 +228,13 @@ void UKF::Prediction(double delta_t) {
 		psi_dot = Xsig_aug(4, i);
 		upsilon_a = Xsig_aug(5, i);
 		upsilon_psi_dd = Xsig_aug(6, i);
-		cout << "7 Aug variables created successfully\n";
+		//cout << "7 Aug variables created successfully\n";
 
 		// Define reuseable mathematical segments
 		double up_pd = upsilon / psi_dot;
 		double p_pddt = psi + (psi_dot * delta_t);
 		double half_dt2 = 0.5 * pow(delta_t, 2);
-		cout << "3 equations created successfully\n";
+		//cout << "3 equations created successfully\n";
 
 		// Initialize variables to store prediction
 		double Px_pred, Py_pred, upsilon_pred, psi_pred, psi_dot_pred = 0.0;
@@ -255,10 +255,10 @@ void UKF::Prediction(double delta_t) {
 			psi_pred = psi + (psi_dot * delta_t) + (half_dt2 * upsilon_psi_dd);
 			psi_dot_pred = psi_dot + (delta_t * upsilon_psi_dd);
 		}
-		cout << "5 state variables created successfully\n";
+		//cout << "5 state variables created successfully\n";
 		// Write predicted sigma points into right column
 		Xsig_pred_.col(i) << Px_pred, Py_pred, upsilon_pred, psi_pred, psi_dot_pred;
-		cout << "Xsig_pred_ updated successfully\n";
+		//cout << "Xsig_pred_ updated successfully\n";
 	}
 
 	// Lesson 7.23: Predicted Mean and Covariance
@@ -355,24 +355,32 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
   */
 	MatrixXd R_ = MatrixXd(2, 2);
 	R_ << 0.0225, 0, 0, 0.0225;
+	cout << "R_ init successfully\n";
 	MatrixXd H_ = MatrixXd(2, 4);
 	H_ << 1, 0, 0, 0,
 		  0, 1, 0, 0;
+	cout << "H_ init successfully\n";
 
 	VectorXd z_pred = H_ * x_;
 	VectorXd y = meas_package.raw_measurements_ - z_pred;
+	cout << "z_pred & y init successfully\n";
 
 	MatrixXd Ht = H_.transpose();
 	MatrixXd S = H_ * P_ * Ht + R_;
+	cout << "Ht and S init successfully\n";
 	MatrixXd Si = S.inverse();
 	MatrixXd PHt = P_ * Ht;
+	cout << "Si and PHt init successfully\n";
 	MatrixXd K = PHt * Si;
+	cout << "K init successfully\n";
 
 	//new estimate
 	x_ = x_ + (K * y);
+	cout << "x_ update successfully\n";
 	long x_size = x_.size();
 	MatrixXd I = MatrixXd::Identity(x_size, x_size);
 	P_ = (I - K * H_) * P_;
+	cout << "P_ update successfully\n";
 }
 
 /**
