@@ -67,6 +67,9 @@ public:
   ///* Sigma point spreading parameter
   double lambda_;
 
+  ///* Previous Timestamp
+  double previous_timestamp_;
+
 
   /**
    * Constructor
