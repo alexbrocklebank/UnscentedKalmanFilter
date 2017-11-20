@@ -1,6 +1,7 @@
 #include "ukf.h"
 #include "Eigen/Dense"
 #include <iostream>
+#include "tools.h"
 
 using namespace std;
 using Eigen::MatrixXd;
@@ -61,10 +62,13 @@ UKF::UKF() {
   VectorXd weights_;
 
   // State dimension
-  int n_x_;
+  n_x_ = 5;
 
   // Augmented state dimension
-  int n_aug_;
+  n_aug_ = 7;
+
+  // Number of Sigma Points
+  n_sigpts_ = 1 + (2 * n_aug_);
 
   // Sigma point spreading parameter
   double lambda_;
@@ -83,21 +87,43 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
   Complete this function! Make sure you switch between lidar and radar
   measurements.
   */
-	
+
 	/************************************************************************
 	*  INITIALIZATION
 	************************************************************************/
 	if (!is_initialized_) {
 		// Shared Initialization
+		x_ = VectorXd(n_x_);
+		x_.fill(0.0);
 
 		if (meas_package.sensor_type_ == MeasurementPackage::RADAR) {
 			// RADAR Initialization
+			const double rho = meas_package.raw_measurements_[0];
+			double phi = meas_package.raw_measurements_[1];
+			const double rhodot = meas_package.raw_measurements_[2];
 
+			tools.NormalizeAngle(phi);
+
+			const double px = rho * cos(phi);
+			const double py = rho * sin(phi);
+			const double vx = rhodot * cos(phi);
+			const double vy = rhodot * sin(phi);
+			x_ << px, py, vx, vy;
 		}
 		else if (meas_package.sensor_type_ == MeasurementPackage::LASER) {
 			// LASER Initialization
-
+			const double px = meas_package.raw_measurements_[0];
+			const double py = meas_package.raw_measurements_[1];
+			x_ << px, py, 0.0, 0.0;
 		}
+		previous_timestamp_ = meas_package.timestamp_;
+
+		P_ = MatrixXd(n_x_, n_x_);
+		P_.fill(0.0);
+		Xsig_pred_ = MatrixXd(n_x_, n_sigpts_);
+		Xsig_pred_.fill(0.0);
+		weights_ = VectorXd(n_sigpts_);
+		weights_.fill(0.0);
 
 		is_initialized_ = true;
 		return;

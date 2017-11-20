@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include "tools.h"
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
@@ -64,12 +65,17 @@ public:
   ///* Augmented state dimension
   int n_aug_;
 
+  ///* Sigma Point count
+  int n_sigpts_;
+
   ///* Sigma point spreading parameter
   double lambda_;
 
   ///* Previous Timestamp
   double previous_timestamp_;
 
+  // Tools library
+  Tools tools;
 
   /**
    * Constructor
