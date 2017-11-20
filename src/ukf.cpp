@@ -361,8 +361,12 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
 		  0, 1, 0, 0;
 	cout << "H_ init successfully\n";
 
+	// ERROR IS SOMEWHERE IN THESE TWO LINES!
+	cout << "H_ = " << H_.rows() << " x " << H_.cols() << " , X_ = " << x_.size() << "\n";
 	VectorXd z_pred = H_ * x_;
-	VectorXd y = meas_package.raw_measurements_ - z_pred;
+	VectorXd z = meas_package.raw_measurements_;
+	cout << "z = " << z.size() << " , z_pred = " << z_pred.size() << "\n";
+	VectorXd y = z - z_pred;
 	cout << "z_pred & y init successfully\n";
 
 	MatrixXd Ht = H_.transpose();
