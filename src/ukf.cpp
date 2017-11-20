@@ -202,7 +202,7 @@ void UKF::Prediction(double delta_t) {
 	P_aug(5, 5) = std_a_ * std_a_;
 	P_aug(6, 6) = std_yawdd_ * std_yawdd_;
 	cout << "P_aug init successfully\n";
-	MatrixXd L = P_.llt().matrixL();
+	MatrixXd L = P_aug.llt().matrixL();
 
 	//create augmented sigma points
 	MatrixXd Xsig_aug = MatrixXd(n_aug_, n_augsigpts_);
