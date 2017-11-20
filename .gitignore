@@ -4,6 +4,7 @@
 # build files
 build/
 x64/
+CMakeFiles/
 
 # ide profiles
 ide_profiles/

@@ -59,6 +59,12 @@ public:
   ///* Weights of sigma points
   VectorXd weights_;
 
+  // More needed matrices?
+  int n_z_;
+  MatrixXd Zsig;
+  VectorXd z_pred;
+  MatrixXd S;
+
   ///* State dimension
   int n_x_;
 
@@ -67,6 +73,9 @@ public:
 
   ///* Sigma Point count
   int n_sigpts_;
+
+  ///* Augmented Sigma Points count
+  int n_augsigpts_;
 
   ///* Sigma point spreading parameter
   double lambda_;
