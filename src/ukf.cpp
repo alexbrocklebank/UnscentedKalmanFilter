@@ -110,13 +110,13 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 			const double py = rho * sin(phi);
 			const double vx = rhodot * cos(phi);
 			const double vy = rhodot * sin(phi);
-			x_ << px, py, vx, vy;
+			x_ << px, py, vx, vy, 0.0;
 		}
 		else if (meas_package.sensor_type_ == MeasurementPackage::LASER) {
 			// LASER Initialization
 			const double px = meas_package.raw_measurements_[0];
 			const double py = meas_package.raw_measurements_[1];
-			x_ << px, py, 0.0, 0.0;
+			x_ << px, py, 0.0, 0.0, 0.0;
 		}
 		previous_timestamp_ = meas_package.timestamp_;
 
