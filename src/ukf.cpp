@@ -93,6 +93,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 	*  INITIALIZATION
 	************************************************************************/
 	if (!is_initialized_) {
+        cout << "Begin Initialization...\n";
 		// Shared Initialization
 		x_ = VectorXd(n_x_);
 		x_.fill(0.0);
@@ -127,28 +128,36 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 		weights_.fill(0.0);
 
 		is_initialized_ = true;
+		cout << "Initialization End.\n";
 		return;
 	}
 
 	/************************************************************************
 	*  PREDICTION
 	************************************************************************/
+	cout << "Begin Prediction...\n";
 	// Determine elapsed time since last update
 	const double dt = (meas_package.timestamp_ - previous_timestamp_) / 1000000.0;
 	previous_timestamp_ = meas_package.timestamp_;
 
 	Prediction(dt);
+	cout << "Prediction End.\n";
 
 	/************************************************************************
 	*  UPDATE
 	************************************************************************/
+
 	if (meas_package.sensor_type_ == MeasurementPackage::RADAR) {
 		// RADAR Update
+		cout << "Begin Radar Update...\n";
 		UpdateRadar(meas_package);
+		cout << "Update Radar End...\n";
 	}
 	else {
 		// LASER Update
+		cout << "Begin Laser Update...\n";
 		UpdateLidar(meas_package);
+		cout << "Update Lidar End...\n";
 	}
 }
 
@@ -165,6 +174,7 @@ void UKF::Prediction(double delta_t) {
   vector, x_. Predict sigma points, the state, and the state covariance matrix.
   */
     // Lesson 7.14: Generating Sigma Points
+    cout << "7.14\n";
 	Xsig_pred_.col(0) = x_;
 	//create square root matrix
 	MatrixXd A = P_.llt().matrixL();
@@ -174,6 +184,7 @@ void UKF::Prediction(double delta_t) {
 	}
 
 	// Lesson 7.17: Augmentation
+	cout << "7.17\n";
 	VectorXd x_aug = VectorXd(n_aug_);
 	//create augmented mean state
 	x_aug.fill(0.0);
@@ -196,6 +207,7 @@ void UKF::Prediction(double delta_t) {
 	}
 
 	// Lesson 7.20: Sigma Point Prediction
+	cout << "7.20\n";
 	// Predict sigma points
 	for (int i = 0; i < Xsig_aug.cols(); i++)
 	{
@@ -235,34 +247,36 @@ void UKF::Prediction(double delta_t) {
 		}
 		// Write predicted sigma points into right column
 		Xsig_pred_.col(i) << Px_pred, Py_pred, upsilon_pred, psi_pred, psi_dot_pred;
-
-		// Lesson 7.23: Predicted Mean and Covariance
-		// Set weights
-		weights_[0] = lambda_ / (lambda_ + n_aug_);
-		for (int i = 1; i < n_augsigpts_; i++)
-		{
-			weights_[i] = 0.5 / (lambda_ + n_aug_);
-		}
-		// x_ is now the state mean
-		//x_.fill(0.0); is this necessary?
-		// Predict state mean
-		for (int i = 0; i < n_augsigpts_; i++)
-		{
-			x_ += weights_[i] * Xsig_pred_.col(i);
-		}
-		// Predicted State covariance matrix
-		//P_.fill(0.0); is this necessary?
-		for (int i = 0; i < weights_.size(); i++)
-		{
-			VectorXd difference = Xsig_pred_.col(i) - x_;
-			// Normalize angle
-			tools.NormalizeAngle(difference[3]);
-			// Predict state covariance matrix
-			P_ += weights_[i] * (difference * difference.transpose());
-		}
 	}
 
+	// Lesson 7.23: Predicted Mean and Covariance
+	cout << "7.23\n";
+    // Set weights
+    weights_[0] = lambda_ / (lambda_ + n_aug_);
+    for (int i = 1; i < n_augsigpts_; i++)
+    {
+        weights_[i] = 0.5 / (lambda_ + n_aug_);
+    }
+    // x_ is now the state mean
+    //x_.fill(0.0); is this necessary?
+    // Predict state mean
+    for (int i = 0; i < n_augsigpts_; i++)
+    {
+        x_ += weights_[i] * Xsig_pred_.col(i);
+    }
+    // Predicted State covariance matrix
+    //P_.fill(0.0); is this necessary?
+    for (int i = 0; i < weights_.size(); i++)
+    {
+        VectorXd difference = Xsig_pred_.col(i) - x_;
+        // Normalize angle
+        tools.NormalizeAngle(difference[3]);
+        // Predict state covariance matrix
+        P_ += weights_[i] * (difference * difference.transpose());
+    }
+
 	// Lesson 7.26: Predict Radar Measurement
+	cout << "7.26\n";
 	n_z_ = 3;		// Number of measurements in RADAR
 	Zsig = MatrixXd(n_z_, n_augsigpts_);
 	z_pred = VectorXd(n_z_);
