@@ -93,7 +93,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 	*  INITIALIZATION
 	************************************************************************/
 	if (!is_initialized_) {
-        cout << "Begin Initialization...\n";
+        //cout << "Begin Initialization...\n";
 		// Shared Initialization
 		x_ = VectorXd(n_x_);
 		x_.fill(0.0);
@@ -128,20 +128,20 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 		weights_.fill(0.0);
 
 		is_initialized_ = true;
-		cout << "Initialization End.\n";
+		//cout << "Initialization End.\n";
 		return;
 	}
 
 	/************************************************************************
 	*  PREDICTION
 	************************************************************************/
-	cout << "Begin Prediction...\n";
+	//cout << "Begin Prediction...\n";
 	// Determine elapsed time since last update
 	const double dt = (meas_package.timestamp_ - previous_timestamp_) / 1000000.0;
 	previous_timestamp_ = meas_package.timestamp_;
 
 	Prediction(dt);
-	cout << "Prediction End.\n";
+	//cout << "Prediction End.\n";
 
 	/************************************************************************
 	*  UPDATE
@@ -149,15 +149,15 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 
 	if (meas_package.sensor_type_ == MeasurementPackage::RADAR) {
 		// RADAR Update
-		cout << "Begin Radar Update...\n";
+		//cout << "Begin Radar Update...\n";
 		UpdateRadar(meas_package);
-		cout << "Update Radar End...\n";
+		//cout << "Update Radar End...\n";
 	}
 	else {
 		// LASER Update
-		cout << "Begin Laser Update...\n";
+		//cout << "Begin Laser Update...\n";
 		UpdateLidar(meas_package);
-		cout << "Update Lidar End...\n";
+		//cout << "Update Lidar End...\n";
 	}
 }
 
@@ -174,7 +174,7 @@ void UKF::Prediction(double delta_t) {
   vector, x_. Predict sigma points, the state, and the state covariance matrix.
   */
     // Lesson 7.14: Generating Sigma Points
-    cout << "7.14\n";
+    //cout << "7.14\n";
 	/*Xsig_pred_.col(0) = x_;
 	//create square root matrix
 	MatrixXd A = P_.llt().matrixL();
@@ -184,7 +184,7 @@ void UKF::Prediction(double delta_t) {
 	}*/
 
 	// Lesson 7.17: Augmentation
-	cout << "7.17\n";
+	//cout << "7.17\n";
 	VectorXd x_aug = VectorXd(n_aug_);
 	//cout << "x_aug created successfully\n";
 	//create augmented mean state
@@ -215,7 +215,7 @@ void UKF::Prediction(double delta_t) {
 	//cout << "Xsig_aug init successfully\n";
 
 	// Lesson 7.20: Sigma Point Prediction
-	cout << "7.20\n";
+	//cout << "7.20\n";
 	// Predict sigma points
 	for (int i = 0; i < Xsig_aug.cols(); i++)
 	{
@@ -262,7 +262,7 @@ void UKF::Prediction(double delta_t) {
 	}
 
 	// Lesson 7.23: Predicted Mean and Covariance
-	cout << "7.23\n";
+	//cout << "7.23\n";
     // Set weights
     weights_[0] = lambda_ / (lambda_ + n_aug_);
     for (int i = 1; i < n_augsigpts_; i++)
@@ -288,7 +288,7 @@ void UKF::Prediction(double delta_t) {
     }
 
 	// Lesson 7.26: Predict Radar Measurement
-	cout << "7.26\n";
+	//cout << "7.26\n";
 	n_z_ = 3;		// Number of measurements in RADAR
 	Zsig = MatrixXd(n_z_, n_augsigpts_);
 	z_pred = VectorXd(n_z_);
@@ -355,38 +355,35 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
   */
 	MatrixXd R_ = MatrixXd(2, 2);
 	R_ << 0.0225, 0, 0, 0.0225;
-	cout << "R_ init successfully\n";
+	//cout << "R_ init successfully\n";
 	MatrixXd H_ = MatrixXd(2, 5);
 	H_ << 1, 0, 0, 0, 0,
 		  0, 1, 0, 0, 0;
-	cout << "H_ init successfully\n";
+	//cout << "H_ init successfully\n";
 
-	// ERROR IS SOMEWHERE IN THESE TWO LINES!
-	// H needs to be X x 5!
-	// H_ = 2 x 4 , X_ = 5
-	cout << "H_ = " << H_.rows() << " x " << H_.cols() << " , X_ = " << x_.size() << "\n";
+	//cout << "H_ = " << H_.rows() << " x " << H_.cols() << " , X_ = " << x_.size() << "\n";
 	VectorXd z_pred = H_ * x_;
 	VectorXd z = meas_package.raw_measurements_;
-	cout << "z = " << z.size() << " , z_pred = " << z_pred.size() << "\n";
+	//cout << "z = " << z.size() << " , z_pred = " << z_pred.size() << "\n";
 	VectorXd y = z - z_pred;
-	cout << "z_pred & y init successfully\n";
+	//cout << "z_pred & y init successfully\n";
 
 	MatrixXd Ht = H_.transpose();
 	MatrixXd S = H_ * P_ * Ht + R_;
-	cout << "Ht and S init successfully\n";
+	//cout << "Ht and S init successfully\n";
 	MatrixXd Si = S.inverse();
 	MatrixXd PHt = P_ * Ht;
-	cout << "Si and PHt init successfully\n";
+	//cout << "Si and PHt init successfully\n";
 	MatrixXd K = PHt * Si;
-	cout << "K init successfully\n";
+	//cout << "K init successfully\n";
 
 	//new estimate
 	x_ = x_ + (K * y);
-	cout << "x_ update successfully\n";
+	//cout << "x_ update successfully\n";
 	long x_size = x_.size();
 	MatrixXd I = MatrixXd::Identity(x_size, x_size);
 	P_ = (I - K * H_) * P_;
-	cout << "P_ update successfully\n";
+	//cout << "P_ update successfully\n";
 }
 
 /**
