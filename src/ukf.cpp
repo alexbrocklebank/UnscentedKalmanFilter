@@ -186,33 +186,33 @@ void UKF::Prediction(double delta_t) {
 	// Lesson 7.17: Augmentation
 	cout << "7.17\n";
 	VectorXd x_aug = VectorXd(n_aug_);
-	cout << "x_aug created successfully\n";
+	//cout << "x_aug created successfully\n";
 	//create augmented mean state
 	x_aug.fill(0.0);
 	x_aug.head(n_x_) = x_;
-	cout << "x_aug init successfully\n";
+	//cout << "x_aug init successfully\n";
 
 
 	//create augmented covariance matrix
 	MatrixXd P_aug = MatrixXd(n_aug_, n_aug_);
-	cout << "P_aug created successfully\n";
+	//cout << "P_aug created successfully\n";
 	P_aug.fill(0.0);
 	P_aug.topLeftCorner(5, 5) = P_;
-	cout << "P_aug set to P_ successfully\n";
+	//cout << "P_aug set to P_ successfully\n";
 	P_aug(5, 5) = std_a_ * std_a_;
 	P_aug(6, 6) = std_yawdd_ * std_yawdd_;
-	cout << "P_aug init successfully\n";
+	//cout << "P_aug init successfully\n";
 	MatrixXd L = P_aug.llt().matrixL();
 
 	//create augmented sigma points
 	MatrixXd Xsig_aug = MatrixXd(n_aug_, n_augsigpts_);
 	Xsig_aug.col(0) = x_aug;
-	cout << "Xsig_aug created successfully\n";
+	//cout << "Xsig_aug created successfully\n";
 	for (int i = 1; i <= n_aug_; i++) {
 		Xsig_aug.col(i) = x_aug + sqrt(lambda_ + n_aug_) * L.col(i - 1);
 		Xsig_aug.col(i + n_aug_) = x_aug - sqrt(lambda_ + n_aug_) * L.col(i - 1);
 	}
-	cout << "Xsig_aug init successfully\n";
+	//cout << "Xsig_aug init successfully\n";
 
 	// Lesson 7.20: Sigma Point Prediction
 	cout << "7.20\n";
@@ -220,7 +220,7 @@ void UKF::Prediction(double delta_t) {
 	for (int i = 0; i < Xsig_aug.cols(); i++)
 	{
 		// Define the 5 Xk State variables for prediction
-		double Px, Py, upsilon, psi, psi_dot, psi_dot_dot, upsilon_a, upsilon_psi_dd = 0.0;
+		double Px, Py, upsilon, psi, psi_dot, upsilon_a, upsilon_psi_dd = 0.0;
 		Px = Xsig_aug(0, i);
 		Py = Xsig_aug(1, i);
 		upsilon = Xsig_aug(2, i);
@@ -228,11 +228,13 @@ void UKF::Prediction(double delta_t) {
 		psi_dot = Xsig_aug(4, i);
 		upsilon_a = Xsig_aug(5, i);
 		upsilon_psi_dd = Xsig_aug(6, i);
+		cout << "7 Aug variables created successfully\n";
 
 		// Define reuseable mathematical segments
 		double up_pd = upsilon / psi_dot;
 		double p_pddt = psi + (psi_dot * delta_t);
 		double half_dt2 = 0.5 * pow(delta_t, 2);
+		cout << "3 equations created successfully\n";
 
 		// Initialize variables to store prediction
 		double Px_pred, Py_pred, upsilon_pred, psi_pred, psi_dot_pred = 0.0;
@@ -253,8 +255,10 @@ void UKF::Prediction(double delta_t) {
 			psi_pred = psi + (psi_dot * delta_t) + (half_dt2 * upsilon_psi_dd);
 			psi_dot_pred = psi_dot + (delta_t * upsilon_psi_dd);
 		}
+		cout << "5 state variables created successfully\n";
 		// Write predicted sigma points into right column
 		Xsig_pred_.col(i) << Px_pred, Py_pred, upsilon_pred, psi_pred, psi_dot_pred;
+		cout << "Xsig_pred_ updated successfully\n";
 	}
 
 	// Lesson 7.23: Predicted Mean and Covariance
