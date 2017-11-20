@@ -3,3 +3,14 @@
 
 # build files
 build/
+x64/
+
+# ide profiles
+ide_profiles/
+
+# downloaded software
+products/
+
+# Visual Studio
+.vs/
+CarND-UKF-Project.*

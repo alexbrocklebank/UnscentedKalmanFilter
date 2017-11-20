@@ -11,13 +11,15 @@ using std::vector;
  * Initializes Unscented Kalman filter
  */
 UKF::UKF() {
+  is_initialized_ = false;
+
   // if this is false, laser measurements will be ignored (except during init)
   use_laser_ = true;
 
   // if this is false, radar measurements will be ignored (except during init)
   use_radar_ = true;
 
-  // initial state vector
+  // initial state vector: [pos1 pos2 vel_abs yaw_angle yaw_rate] in SI units and rad
   x_ = VectorXd(5);
 
   // initial covariance matrix
@@ -45,12 +47,27 @@ UKF::UKF() {
   std_radrd_ = 0.3;
 
   /**
-  TODO:
-
-  Complete the initialization. See ukf.h for other member properties.
+  TODO: Initialize these
 
   Hint: one or more values initialized above might be wildly off...
   */
+  // predicted sigma points matrix
+  MatrixXd Xsig_pred_;
+
+  // time when the state is true, in us
+  long long time_us_;
+
+  // Weights of sigma points
+  VectorXd weights_;
+
+  // State dimension
+  int n_x_;
+
+  // Augmented state dimension
+  int n_aug_;
+
+  // Sigma point spreading parameter
+  double lambda_;
 }
 
 UKF::~UKF() {}
