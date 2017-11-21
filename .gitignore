@@ -15,3 +15,6 @@ products/
 # Visual Studio
 .vs/
 CarND-UKF-Project.*
+
+# Zip files for submission
+*.zip
