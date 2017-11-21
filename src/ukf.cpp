@@ -65,9 +65,9 @@ UKF::UKF() {
   P_ = MatrixXd(n_x_, n_x_);
   P_ << 1.0, 0.0, 0.0, 0.0, 0.0,
 	  0.0, 1.0, 0.0, 0.0, 0.0,
-	  0.0, 0.0, 1000.0, 0.0, 0.0,
-	  0.0, 0.0, 0.0, 1000.0, 0.0,
-	  0.0, 0.0, 0.0, 0.0, 1000.0;
+	  0.0, 0.0, 1.0, 0.0, 0.0,
+	  0.0, 0.0, 0.0, 1.0, 0.0,
+	  0.0, 0.0, 0.0, 0.0, 1.0;
 
   // Sigma point spreading parameter
   lambda_ = 3 - n_aug_;
@@ -181,15 +181,6 @@ void UKF::Prediction(double delta_t) {
   Complete this function! Estimate the object's location. Modify the state
   vector, x_. Predict sigma points, the state, and the state covariance matrix.
   */
-    // Lesson 7.14: Generating Sigma Points
-    //cout << "7.14\n";
-	/*Xsig_pred_.col(0) = x_;
-	//create square root matrix
-	MatrixXd A = P_.llt().matrixL();
-	for (int i = 1; i <= n_x_; i++) {
-		Xsig_pred_.col(i) = x_ + sqrt(lambda_ + n_x_) * A.col(i - 1);
-		Xsig_pred_.col(i + n_x_) = x_ - sqrt(lambda_ + n_x_) * A.col(i - 1);
-	}*/
 
 	// Lesson 7.17: Augmentation
 	//cout << "7.17\n";
@@ -377,7 +368,7 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
 		Py = Xsig_pred_(1, i);
 		upsilon = Xsig_pred_(2, i);
 		psi = Xsig_pred_(3, i);
-		psi_dot = Xsig_pred_(4, i);
+		//psi_dot = Xsig_pred_(4, i);
 
 		// Transform sigma points into measurement space
 		double rho = pow((pow(Px, 2) + pow(Py, 2)), 0.5);
