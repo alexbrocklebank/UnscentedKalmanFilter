@@ -121,8 +121,12 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 		previous_timestamp_ = meas_package.timestamp_;
 
 		P_ = MatrixXd(n_x_, n_x_);
-		P_.fill(0.0);
-		P_.Identity(5, 5);
+		//P_.fill(0.0);
+		P_ << 1.0, 0.0, 0.0, 0.0, 0.0,
+			  0.0, 1.0, 0.0, 0.0, 0.0, 
+			  0.0, 0.0, 1000.0, 0.0, 0.0, 
+			  0.0, 0.0, 0.0, 1000.0, 0.0, 
+			  0.0, 0.0, 0.0, 0.0, 1000.0;
 		Xsig_pred_ = MatrixXd(n_x_, n_augsigpts_);
 		Xsig_pred_.fill(0.0);
 		weights_ = VectorXd(n_augsigpts_);
@@ -160,6 +164,8 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 		UpdateLidar(meas_package);
 		//cout << "Update Lidar End...\n";
 	}
+	cout << "x_ = " << x_ << endl;
+	cout << "P_ = " << P_ << endl;
 }
 
 /**
@@ -355,7 +361,8 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
   You'll also need to calculate the lidar NIS.
   */
 	MatrixXd R_ = MatrixXd(2, 2);
-	R_ << 0.0225, 0, 0, 0.0225;
+	R_ << std_laspx_, 0, 
+		  0, std_laspy_;
 	//cout << "R_ init successfully\n";
 	MatrixXd H_ = MatrixXd(2, 5);
 	H_ << 1, 0, 0, 0, 0,
