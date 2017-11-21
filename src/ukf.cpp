@@ -41,25 +41,6 @@ UKF::UKF() {
   // Radar measurement noise standard deviation radius change in m/s
   std_radrd_ = 0.3;
 
-  // Measurement noise matrix for radar
-  R_radar_ << pow(std_radr_, 2), 0, 0,
-			  0, pow(std_radphi_, 2), 0,
-			  0, 0, pow(std_radrd_, 2);
-
-  // Measurement noise matrix for lidar
-  R_laser_ << std_laspx_, 0,
-			  0, std_laspy_;
-
-  // Lidar covariance matrix
-  H_laser_ << 1, 0, 0, 0, 0,
-			  0, 1, 0, 0, 0;
-
-  // Transposed Lidar covariance matrix
-  Ht_laser_ = H_laser_.transpose();
-
-  // predicted sigma points matrix
-  MatrixXd Xsig_pred_;
-
   // time when the state is true, in us
   long long time_us_;
 
@@ -85,10 +66,32 @@ UKF::UKF() {
   n_sigpts_ = 1 + (2 * n_x_);
   n_augsigpts_ = 1 + (2 * n_aug_);
 
+  // predicted sigma points matrix
+  Xsig_pred_ = MatrixXd(n_x_, n_augsigpts_);
+
   // Weights of sigma points
   weights_ = VectorXd(n_augsigpts_);
   weights_.fill(0.5 / (lambda_ + n_aug_));
   weights_[0] = lambda_ / (lambda_ + n_aug_);
+
+  // Measurement noise matrix for radar
+  R_radar_ = MatrixXd(n_z_, n_z_);
+  R_radar_ << pow(std_radr_, 2), 0, 0,
+	  0, pow(std_radphi_, 2), 0,
+	  0, 0, pow(std_radrd_, 2);
+
+  // Measurement noise matrix for lidar
+  R_laser_ = MatrixXd(2, 2);
+  R_laser_ << std_laspx_, 0,
+	  0, std_laspy_;
+
+  // Lidar covariance matrix
+  H_laser_ = MatrixXd(2, n_x_);
+  H_laser_ << 1, 0, 0, 0, 0,
+	  0, 1, 0, 0, 0;
+
+  // Transposed Lidar covariance matrix
+  Ht_laser_ = H_laser_.transpose();
 }
 
 UKF::~UKF() {}
@@ -208,7 +211,7 @@ void UKF::Prediction(double delta_t) {
 
 	// Lesson 7.20: Sigma Point Prediction
 	// Predict sigma points
-	Xsig_pred_ = MatrixXd(n_x_, n_augsigpts_);
+	// Reset Sigma Points Prediciton matrix
 	Xsig_pred_.fill(0.0);
 
 	for (int i = 0; i < Xsig_aug.cols(); i++)
