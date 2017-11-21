@@ -122,6 +122,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 
 		P_ = MatrixXd(n_x_, n_x_);
 		P_.fill(0.0);
+		P_.Identity(5, 5);
 		Xsig_pred_ = MatrixXd(n_x_, n_augsigpts_);
 		Xsig_pred_.fill(0.0);
 		weights_ = VectorXd(n_augsigpts_);
