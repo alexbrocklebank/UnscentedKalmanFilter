@@ -18,7 +18,7 @@ UKF::UKF() {
   use_laser_ = true;
 
   // if this is false, radar measurements will be ignored (except during init)
-  use_radar_ = false;
+  use_radar_ = true;
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
   std_a_ = 2.1;
@@ -41,16 +41,14 @@ UKF::UKF() {
   // Radar measurement noise standard deviation radius change in m/s
   std_radrd_ = 0.3;
 
-  /**
-  TODO: Initialize these
-
-  Hint: one or more values initialized above might be wildly off...
-  */
   // predicted sigma points matrix
   MatrixXd Xsig_pred_;
 
   // time when the state is true, in us
   long long time_us_;
+
+  // Radar measurement dimensions for Update
+  n_z_ = 3;	
 
   // State dimension
   n_x_ = 5;
@@ -105,7 +103,6 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 	*  INITIALIZATION
 	************************************************************************/
 	if (!is_initialized_) {
-        //cout << "Begin Initialization...\n";
 		// Shared Initialization
 		x_ = VectorXd(n_x_);
 		x_.fill(0.0);
@@ -116,57 +113,60 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 			double phi = meas_package.raw_measurements_[1];
 			const double rhodot = meas_package.raw_measurements_[2];
 
+			// Normalize Angles between -PI/PI
 			tools.NormalizeAngle(phi);
 
+			// Derive State Variables from Sensor data
 			const double px = rho * cos(phi);
 			const double py = rho * sin(phi);
-			const double vx = rhodot * cos(phi);
-			const double vy = rhodot * sin(phi);
-			const double v  = sqrt(vx * vx + vy * vy);
+			//const double vx = rhodot * cos(phi);
+			//const double vy = rhodot * sin(phi);
+			//const double v  = sqrt(vx * vx + vy * vy);
+			
+			// State Initializes better with zeros
 			x_ << px, py, 0.0, 0.0, 0.0;
 		}
 		else if (meas_package.sensor_type_ == MeasurementPackage::LASER) {
 			// LASER Initialization
 			const double px = meas_package.raw_measurements_[0];
 			const double py = meas_package.raw_measurements_[1];
+
+			// Initialize State with Sensor data and zeros
 			x_ << px, py, 0.0, 0.0, 0.0;
 		}
 		previous_timestamp_ = meas_package.timestamp_;
 
 		is_initialized_ = true;
-		//cout << "Initialization End.\n";
 		return;
 	}
 
 	/************************************************************************
 	*  PREDICTION
 	************************************************************************/
-	//cout << "Begin Prediction...\n";
+
 	// Determine elapsed time since last update
 	const double dt = (meas_package.timestamp_ - previous_timestamp_) / 1000000.0;
 	previous_timestamp_ = meas_package.timestamp_;
 
+	// Call Prediction() function
 	Prediction(dt);
-	//cout << "Prediction End.\n";
 
 	/************************************************************************
 	*  UPDATE
 	************************************************************************/
 
+	// Call corresponding Update function based on sensor data retrieved
 	if (meas_package.sensor_type_ == MeasurementPackage::RADAR) {
 		// RADAR Update
-		//cout << "Begin Radar Update...\n";
 		UpdateRadar(meas_package);
-		//cout << "Update Radar End...\n";
 	}
 	else {
 		// LASER Update
-		//cout << "Begin Laser Update...\n";
 		UpdateLidar(meas_package);
-		//cout << "Update Lidar End...\n";
 	}
-	cout << "x_ = " << x_ << endl;
-	cout << "P_ = " << P_ << endl;
+	// Output State Vector and Covariance Matrix for testing
+	//cout << "x_ = " << x_ << endl;
+	//cout << "P_ = " << P_ << endl;
 }
 
 /**
@@ -175,53 +175,39 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
  * measurement and this one.
  */
 void UKF::Prediction(double delta_t) {
-  /**
-  TODO:
-
-  Complete this function! Estimate the object's location. Modify the state
-  vector, x_. Predict sigma points, the state, and the state covariance matrix.
-  */
 
 	// Lesson 7.17: Augmentation
-	//cout << "7.17\n";
+
+	// Create augmented mean state vector
 	VectorXd x_aug = VectorXd(n_aug_);
-	//cout << "x_aug created successfully\n";
-	//create augmented mean state
 	x_aug.fill(0.0);
 	x_aug.head(n_x_) = x_;
-	//cout << "x_aug init successfully\n";
 
-
-	//create augmented covariance matrix
+	// Create augmented covariance matrix from P_
 	MatrixXd P_aug = MatrixXd(n_aug_, n_aug_);
-	//cout << "P_aug created successfully\n";
 	P_aug.fill(0.0);
 	P_aug.topLeftCorner(5, 5) = P_;
-	//cout << "P_aug set to P_ successfully\n";
 	P_aug(5, 5) = std_a_ * std_a_;
 	P_aug(6, 6) = std_yawdd_ * std_yawdd_;
-	//cout << "P_aug init successfully\n";
+	// Square root matrix of P_aug
 	MatrixXd L = P_aug.llt().matrixL();
 
 	//create augmented sigma points
 	MatrixXd Xsig_aug = MatrixXd(n_aug_, n_augsigpts_);
 	Xsig_aug.col(0) = x_aug;
-	//cout << "Xsig_aug created successfully\n";
 	for (int i = 1; i <= n_aug_; i++) {
 		Xsig_aug.col(i) = x_aug + sqrt(lambda_ + n_aug_) * L.col(i - 1);
 		Xsig_aug.col(i + n_aug_) = x_aug - sqrt(lambda_ + n_aug_) * L.col(i - 1);
 	}
-	//cout << "Xsig_aug init successfully\n";
 
 	// Lesson 7.20: Sigma Point Prediction
-	//cout << "7.20\n";
 	// Predict sigma points
 	Xsig_pred_ = MatrixXd(n_x_, n_augsigpts_);
 	Xsig_pred_.fill(0.0);
 
 	for (int i = 0; i < Xsig_aug.cols(); i++)
 	{
-		// Define the 5 Xk State variables for prediction
+		// Define the 7 Xk State variables for prediction
 		double Px, Py, upsilon, psi, psi_dot, upsilon_a, upsilon_psi_dd = 0.0;
 		Px = Xsig_aug(0, i);
 		Py = Xsig_aug(1, i);
@@ -230,13 +216,11 @@ void UKF::Prediction(double delta_t) {
 		psi_dot = Xsig_aug(4, i);
 		upsilon_a = Xsig_aug(5, i);
 		upsilon_psi_dd = Xsig_aug(6, i);
-		//cout << "7 Aug variables created successfully\n";
 
 		// Define reuseable mathematical segments
 		double up_pd = upsilon / psi_dot;
 		double p_pddt = psi + (psi_dot * delta_t);
 		double half_dt2 = 0.5 * pow(delta_t, 2);
-		//cout << "3 equations created successfully\n";
 
 		// Initialize variables to store prediction
 		double Px_pred, Py_pred, upsilon_pred, psi_pred, psi_dot_pred = 0.0;
@@ -251,19 +235,17 @@ void UKF::Prediction(double delta_t) {
 			Px_pred = Px + (upsilon * cos(psi) * delta_t) + (half_dt2 * cos(psi) * upsilon_a);
 			Py_pred = Py + (upsilon * sin(psi) * delta_t) + (half_dt2 * sin(psi) * upsilon_a);
 		}
+		// Shared equations that need not worry about /0
 		upsilon_pred = upsilon + (delta_t * upsilon_a);
 		psi_pred = psi + (psi_dot * delta_t) + (half_dt2 * upsilon_psi_dd);
 		psi_dot_pred = psi_dot + (delta_t * upsilon_psi_dd);
-		//cout << "5 state variables created successfully\n";
+
 		// Write predicted sigma points into right column
 		Xsig_pred_.col(i) << Px_pred, Py_pred, upsilon_pred, psi_pred, psi_dot_pred;
-		//cout << "Xsig_pred_ updated successfully\n";
 	}
 
 	// Lesson 7.23: Predicted Mean and Covariance
-	//cout << "7.23\n";
-    
-    // the state mean
+    // The State Mean vector
 	VectorXd x = VectorXd(n_x_);
 	x.fill(0.0);
     // Predict state mean
@@ -272,7 +254,7 @@ void UKF::Prediction(double delta_t) {
         x += weights_[i] * Xsig_pred_.col(i);
     }
 
-	// prediction covariance matrix
+	// Prediction covariance matrix
 	MatrixXd P = MatrixXd(n_x_, n_x_);
 	P.fill(0.0);
     // Predicted State covariance matrix
@@ -285,6 +267,7 @@ void UKF::Prediction(double delta_t) {
         P += weights_[i] * (difference * difference.transpose());
     }
 
+	// Store to respective class member
 	x_ = x;
 	P_ = P;
 
@@ -296,45 +279,38 @@ void UKF::Prediction(double delta_t) {
  */
 void UKF::UpdateLidar(MeasurementPackage meas_package) {
   /**
-  TODO:
-
-  Complete this function! Use lidar data to update the belief about the object's
+  Use lidar data to update the belief about the object's
   position. Modify the state vector, x_, and covariance, P_.
 
   You'll also need to calculate the lidar NIS.
   */
+	// Measurement noise matrix for lidar
 	MatrixXd R_ = MatrixXd(2, 2);
 	R_ << std_laspx_, 0, 
 		  0, std_laspy_;
-	//cout << "R_ init successfully\n";
+
+	// Lidar covariance matrix
 	MatrixXd H_ = MatrixXd(2, 5);
 	H_ << 1, 0, 0, 0, 0,
 		  0, 1, 0, 0, 0;
-	//cout << "H_ init successfully\n";
 
-	//cout << "H_ = " << H_.rows() << " x " << H_.cols() << " , X_ = " << x_.size() << "\n";
+	// Vanilla Kalman Filter equations for Lidar
 	VectorXd z_pred = H_ * x_;
 	VectorXd z = meas_package.raw_measurements_;
-	//cout << "z = " << z.size() << " , z_pred = " << z_pred.size() << "\n";
 	VectorXd y = z - z_pred;
-	//cout << "z_pred & y init successfully\n";
 
+	// Plain KF for Lidar to increase responsiveness
 	MatrixXd Ht = H_.transpose();
 	MatrixXd S = H_ * P_ * Ht + R_;
-	//cout << "Ht and S init successfully\n";
 	MatrixXd Si = S.inverse();
 	MatrixXd PHt = P_ * Ht;
-	//cout << "Si and PHt init successfully\n";
 	MatrixXd K = PHt * Si;
-	//cout << "K init successfully\n";
 
-	//new estimate
+	// New estimate
 	x_ = x_ + (K * y);
-	//cout << "x_ update successfully\n";
 	long x_size = x_.size();
 	MatrixXd I = MatrixXd::Identity(x_size, x_size);
 	P_ = (I - K * H_) * P_;
-	//cout << "P_ update successfully\n";
 }
 
 /**
@@ -343,19 +319,15 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
  */
 void UKF::UpdateRadar(MeasurementPackage meas_package) {
   /**
-  TODO:
-
-  Complete this function! Use radar data to update the belief about the object's
+  Use radar data to update the belief about the object's
   position. Modify the state vector, x_, and covariance, P_.
 
   You'll also need to calculate the radar NIS.
   */
     // Lesson 7.26: Predict Radar Measurement
-    //cout << "7.26\n";
-	n_z_ = 3;		// Number of measurements in RADAR
-	Zsig = MatrixXd(n_z_, n_augsigpts_);
-	z_pred = VectorXd(n_z_);
-	S = MatrixXd(n_z_, n_z_);
+	MatrixXd Zsig = MatrixXd(n_z_, n_augsigpts_);
+	VectorXd z_pred = VectorXd(n_z_);
+	MatrixXd S = MatrixXd(n_z_, n_z_);
 	Zsig.fill(0.0);
 	z_pred.fill(0.0);
 	S.fill(0.0);

@@ -59,11 +59,8 @@ public:
   ///* Weights of sigma points
   VectorXd weights_;
 
-  // More needed matrices?
+  ///* Number of radar measurements
   int n_z_;
-  MatrixXd Zsig;
-  VectorXd z_pred;
-  MatrixXd S;
 
   ///* State dimension
   int n_x_;
