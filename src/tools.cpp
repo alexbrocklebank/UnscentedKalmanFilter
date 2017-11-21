@@ -48,5 +48,10 @@ VectorXd Tools::CalculateRMSE(const vector<VectorXd> &estimations,
 }
 
 void Tools::NormalizeAngle(double& phi) {
-	phi = atan2(sin(phi), cos(phi));
+	if (fabs(phi) < 0.0001) {
+		phi = 0.0;
+	}
+	else {
+		phi = atan2(sin(phi), cos(phi));
+	}
 }

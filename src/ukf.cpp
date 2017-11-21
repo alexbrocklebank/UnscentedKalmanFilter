@@ -41,6 +41,22 @@ UKF::UKF() {
   // Radar measurement noise standard deviation radius change in m/s
   std_radrd_ = 0.3;
 
+  // Measurement noise matrix for radar
+  R_radar_ << pow(std_radr_, 2), 0, 0,
+			  0, pow(std_radphi_, 2), 0,
+			  0, 0, pow(std_radrd_, 2);
+
+  // Measurement noise matrix for lidar
+  R_laser_ << std_laspx_, 0,
+			  0, std_laspy_;
+
+  // Lidar covariance matrix
+  H_laser_ << 1, 0, 0, 0, 0,
+			  0, 1, 0, 0, 0;
+
+  // Transposed Lidar covariance matrix
+  Ht_laser_ = H_laser_.transpose();
+
   // predicted sigma points matrix
   MatrixXd Xsig_pred_;
 
@@ -60,12 +76,7 @@ UKF::UKF() {
   x_ = VectorXd(n_x_);
 
   // initial covariance matrix
-  P_ = MatrixXd(n_x_, n_x_);
-  P_ << 1.0, 0.0, 0.0, 0.0, 0.0,
-	  0.0, 1.0, 0.0, 0.0, 0.0,
-	  0.0, 0.0, 1.0, 0.0, 0.0,
-	  0.0, 0.0, 0.0, 1.0, 0.0,
-	  0.0, 0.0, 0.0, 0.0, 1.0;
+  P_ = MatrixXd::Identity(n_x_, n_x_);
 
   // Sigma point spreading parameter
   lambda_ = 3 - n_aug_;
@@ -76,13 +87,8 @@ UKF::UKF() {
 
   // Weights of sigma points
   weights_ = VectorXd(n_augsigpts_);
+  weights_.fill(0.5 / (lambda_ + n_aug_));
   weights_[0] = lambda_ / (lambda_ + n_aug_);
-  double weight = 0.5 / (lambda_ + n_aug_);
-  for (int i = 1; i < n_augsigpts_; i++)
-  {
-	  weights_[i] = weight;
-  }
-
 }
 
 UKF::~UKF() {}
@@ -187,8 +193,8 @@ void UKF::Prediction(double delta_t) {
 	MatrixXd P_aug = MatrixXd(n_aug_, n_aug_);
 	P_aug.fill(0.0);
 	P_aug.topLeftCorner(5, 5) = P_;
-	P_aug(5, 5) = std_a_ * std_a_;
-	P_aug(6, 6) = std_yawdd_ * std_yawdd_;
+	P_aug(n_x_, n_x_) = std_a_ * std_a_;
+	P_aug(n_x_ + 1, n_x_ + 1) = std_yawdd_ * std_yawdd_;
 	// Square root matrix of P_aug
 	MatrixXd L = P_aug.llt().matrixL();
 
@@ -246,13 +252,7 @@ void UKF::Prediction(double delta_t) {
 
 	// Lesson 7.23: Predicted Mean and Covariance
     // The State Mean vector
-	VectorXd x = VectorXd(n_x_);
-	x.fill(0.0);
-    // Predict state mean
-    for (int i = 0; i < n_augsigpts_; i++)
-    {
-        x += weights_[i] * Xsig_pred_.col(i);
-    }
+	VectorXd x = Xsig_pred_ * weights_;
 
 	// Prediction covariance matrix
 	MatrixXd P = MatrixXd(n_x_, n_x_);
@@ -284,33 +284,23 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
 
   You'll also need to calculate the lidar NIS.
   */
-	// Measurement noise matrix for lidar
-	MatrixXd R_ = MatrixXd(2, 2);
-	R_ << std_laspx_, 0, 
-		  0, std_laspy_;
-
-	// Lidar covariance matrix
-	MatrixXd H_ = MatrixXd(2, 5);
-	H_ << 1, 0, 0, 0, 0,
-		  0, 1, 0, 0, 0;
 
 	// Vanilla Kalman Filter equations for Lidar
-	VectorXd z_pred = H_ * x_;
+	VectorXd z_pred = H_laser_ * x_;
 	VectorXd z = meas_package.raw_measurements_;
 	VectorXd y = z - z_pred;
 
 	// Plain KF for Lidar to increase responsiveness
-	MatrixXd Ht = H_.transpose();
-	MatrixXd S = H_ * P_ * Ht + R_;
+	MatrixXd PHt = P_ * Ht_laser_;
+	MatrixXd S = H_laser_ * PHt + R_laser_;
 	MatrixXd Si = S.inverse();
-	MatrixXd PHt = P_ * Ht;
 	MatrixXd K = PHt * Si;
 
 	// New estimate
 	x_ = x_ + (K * y);
 	long x_size = x_.size();
 	MatrixXd I = MatrixXd::Identity(x_size, x_size);
-	P_ = (I - K * H_) * P_;
+	P_ = (I - K * H_laser_) * P_;
 }
 
 /**
@@ -344,9 +334,12 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
 
 		// Transform sigma points into measurement space
 		double rho = pow((pow(Px, 2) + pow(Py, 2)), 0.5);
-		double phi = atan2(Py, Px);
-		// Normalize
-		tools.NormalizeAngle(phi);
+		double phi = 0.0;
+		if (!(Px == 0.0 && Py == 0.0)) {
+			double phi = atan2(Py, Px);
+			// Normalize
+			tools.NormalizeAngle(phi);
+		}
 		// Avoid divide by 0
 		if (rho < 0.001)
 		{
@@ -366,13 +359,8 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
 		tools.NormalizeAngle(difference[1]);
 		S += weights_[i] * (difference * difference.transpose());
 	}
-	// Add R/E to S
-	MatrixXd E = MatrixXd(n_z_, n_z_);
-	E.fill(0.0);
-	E << pow(std_radr_, 2), 0, 0,
-		0, pow(std_radphi_, 2), 0,
-		0, 0, pow(std_radrd_, 2);
-	S += E;
+	
+	S += R_radar_;
 
 	// Lesson 7.29: UKF Update
 	MatrixXd Tc = MatrixXd(n_x_, n_z_);

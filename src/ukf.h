@@ -56,6 +56,18 @@ public:
   ///* Radar measurement noise standard deviation radius change in m/s
   double std_radrd_ ;
 
+  ///* Measurement noise matrix for lidar
+  MatrixXd R_radar_;
+
+  ///* Measurement noise matrix for lidar
+  MatrixXd R_laser_;
+
+  ///* Lidar covariance matrix
+  MatrixXd H_laser_;
+
+  ///* Transposed Lidar covariance matrix
+  MatrixXd Ht_laser_;
+
   ///* Weights of sigma points
   VectorXd weights_;
 
